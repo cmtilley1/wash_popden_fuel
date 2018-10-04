@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <h2>Population Density and Fuel Stations in Washington State</h2>
+        <title>Lab 4</title>
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+        integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+        crossorigin=""/>
+
+        <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
+        integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+        crossorigin=""></script>
+
+        <script type="text/javascript" src="data.js"></script>
+        <script type="text/javascript" src="data1.js"></script>
+
+        <style type="text/css">
+          html, body { margin: 0; padding: 0; height: 100%; }
+          #map { min-height: 100%; }
+            
+        <link rel="icon" href="hand.png" >
+
+
+          /* Optional: adjust the values below to change the appearance of the legend */
+          .legend {
+              padding: 6px 8px;
+              line-height: 18px;
+              background: rgba(255,255,255,0.9);
+              box-shadow: 0 0 15px rgba(0,0,0,0.2);
+              border-radius: 5px;
+          }
+
+           /* Optional: adjust the values below to change the appearance of the legend color boxes */
+           .legend i {
+              width: 18px;
+              height: 18px;
+              float: left;
+              margin-right: 8px;
+              opacity: 0.7;
+          }
+        </style>
+
+    </head>
+
+    <body>
+        <div id="map"></div>
+
+        <script type="text/javascript">
+
+           var map = L.map('map', {
+               center: [47.3081992,-122.7004763],
+               zoom: 6.47
+            });
+
+            var canvas = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                   attribution: 'Map data © OpenStreetMap contributors, CC-BY-SA, Imagery © Mapbox',
+                   maxZoom: 11,
+                   minZoom: 5,
+                   id: 'mapbox.streets',
+                   accessToken:'pk.eyJ1IjoiY210aWxsZXkiLCJhIjoiY2psZnJ0NzVsMGU5bjNrcGtvYjI4d29seSJ9._B2vpuJ9TrQ2yu0XocrO9w'
+             }).addTo(map);
+
+             var imagery = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+               attribution: 'Map data © OpenStreetMap contributors, CC-BY-SA, Imagery © Mapbox',
+
+               id: 'mapbox.satellite',
+               accessToken:'pk.eyJ1IjoiY210aWxsZXkiLCJhIjoiY2psZnJ0NzVsMGU5bjNrcGtvYjI4d29seSJ9._B2vpuJ9TrQ2yu0XocrO9w'
+             });
+
+             function getColor(value) {
+                  return value > 2939034 ? '#006d2c':
+                         value > 307682  ? '#2ca25f':
+                         value > 115307  ? '#66c2a4':
+                         value > 52011   ? '#b2e2e2':
+                                           '#edf8fb';
+            }
+
+            function style(feature){
+                return {
+                    fillColor: getColor(feature.properties.pop_den),   // pop_den is the field name for the population density data
+                    weight: 2,
+                    opacity: 1,
+                    color: 'gray',
+                    fillOpacity: 0.9
+                };
+            }
+            var Wash_popden = L.geoJson(data, {style:style}).addTo(map);
+           
+            var wash_fuelstations = L.geoJson(data1,  
+            {style:style}).addTo(map);
+
+
+            var legend = L.control({position: 'bottomright'}); // Try the other three corners if you like.
+
+              legend.onAdd = function (map) {
+
+                  var div = L.DomUtil.create('div', 'legend'),
+                      grades = [0, 52011, 115307, 307682, 2939034]; // The break values to define the intervals of population, note we begin from 0 here
+
+                  div.innerHTML = '<b>Population Density <br> 2015 <br></b>'; // The legend title, in this case it's Population Density 2011
+
+                  // Loop through our the classes and generate a label with a colored square for each interval.
+                  // If you are creating a similar choropleth map, you do not need to change lines below.
+                  for (var i = 0; i < grades.length; i++) {
+                      div.innerHTML +=
+                      '<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
+                      grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                  }
+
+                  return div;
+              };
+
+            legend.addTo(map);
+
+            var basemaps = {
+                "Light Canvas": canvas,
+                "Satellite Imagery": imagery
+            };
+
+            var overlaymaps = {
+                "Population Density": Wash_popden,
+                "Fuel Stations": wash_fuelstations
+            };
+            
+            L.control.layers(basemaps, overlaymaps).addTo(map);
+
+            // Removing the legend when the layer is removed
+              map.on('overlayremove', function(eventLayer){
+              if (eventLayer.name == 'Population Density'){ // We use the key/display name to refer to the layer
+                map.removeControl(legend); // legend is the variable name of the layer legend
+              }
+            });
+
+// Adding the legend when the layer is added
+              map.on('overlayadd', function(eventLayer){
+              if (eventLayer.name == 'Population Density'){
+                legend.addTo(map);
+      }
+    });
+        </script>
+   </body>
+</html>
